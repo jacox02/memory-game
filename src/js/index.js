@@ -2,12 +2,19 @@
 let card = document.getElementsByClassName("card");
 let cards = [...card];
 
+let image = document.getElementsByTagName("img");
+let images = [...image];
+
 // deck of all cards in game
 const deck = document.getElementById("card-deck");
 
 // declaring move variable
 let moves = 0;
+let livesCounter = 0;
+let lost = false;
+
 let counter = document.querySelector(".moves");
+let lives = document.querySelector(".lives");
 
 // declare variables for star icons
 const stars = document.querySelectorAll(".fa-star");
@@ -18,11 +25,9 @@ let matchedCard = document.getElementsByClassName("match");
 // stars list
 let starsList = document.querySelectorAll(".stars li");
 
-// close icon in modal
-let closeicon = document.querySelector(".close");
-
 // declare modal
 let modal = document.getElementById("popup1");
+let lostModal = document.getElementById("popup2");
 
 // array for opened cards
 var openedCards = [];
@@ -67,22 +72,28 @@ function startGame() {
   // reset moves
   moves = 0;
   counter.innerHTML = moves;
+  // reset moves
+  livesCounter = 6;
+  lives.innerHTML = livesCounter;
   // reset rating
+  for (var i = 0; i < cards.length; i++) {
+    card = cards[i];
+    image = images[i];
+
+    image.classList.add("hidde");
+    card.addEventListener("click", displayCard);
+    card.addEventListener("click", cardOpen);
+    card.addEventListener("click", congratulations);
+  }
   for (var i = 0; i < stars.length; i++) {
     stars[i].style.color = "#FFD700";
     stars[i].style.visibility = "visible";
   }
-  //reset timer
-  second = 0;
-  minute = 0;
-  hour = 0;
-  var timer = document.querySelector(".timer");
-  timer.innerHTML = "0 mins 0 secs";
-  clearInterval(interval);
 }
 
 // @description toggles open and show class to display cards
 var displayCard = function () {
+  this.firstChild.nextSibling.classList.remove("hidde");
   this.classList.toggle("open");
   this.classList.toggle("show");
   this.classList.toggle("disabled");
@@ -92,6 +103,7 @@ var displayCard = function () {
 function cardOpen() {
   openedCards.push(this);
   var len = openedCards.length;
+
   if (len === 2) {
     moveCounter();
     if (openedCards[0].type === openedCards[1].type) {
@@ -111,17 +123,30 @@ function matched() {
   openedCards = [];
 }
 
-// description when cards don't match
+// description when cards don't match9
 function unmatched() {
-  openedCards[0].classList.add("unmatched");
-  openedCards[1].classList.add("unmatched");
   disable();
   setTimeout(function () {
-    openedCards[0].classList.remove("show", "open", "no-event", "unmatched");
-    openedCards[1].classList.remove("show", "open", "no-event", "unmatched");
+    for (let i = 0; i < openedCards.length; i++) {
+      const card = openedCards[i];
+      card.classList.remove("show", "open", "no-event", "unmatched");
+      card.firstChild.nextSibling.classList.add("hidde");
+    }
     enable();
     openedCards = [];
   }, 1100);
+
+  if (livesCounter > 0 && livesCounter != 1) {
+    livesCounter = livesCounter - 1;
+    lives.innerHTML = livesCounter;
+
+    console.log("Lives " + livesCounter);
+  } else {
+    lost = true;
+
+    console.log("You lost");
+    startGame();
+  }
 }
 
 // @description disable cards temporarily
@@ -145,56 +170,38 @@ function enable() {
 function moveCounter() {
   moves++;
   counter.innerHTML = moves;
-  //start timer on first click
-  if (moves == 1) {
-    second = 0;
-    minute = 0;
-    hour = 0;
-    startTimer();
-  }
-  // setting rates based on moves
-  if (moves > 8 && moves < 12) {
-    for (i = 0; i < 3; i++) {
-      if (i > 1) {
-        stars[i].style.visibility = "collapse";
-      }
-    }
-  } else if (moves > 13) {
-    for (i = 0; i < 3; i++) {
-      if (i > 0) {
-        stars[i].style.visibility = "collapse";
-      }
-    }
-  }
 }
 
-// @description game timer
-var second = 0,
-  minute = 0;
-hour = 0;
-var timer = document.querySelector(".timer");
-var interval;
-function startTimer() {
-  interval = setInterval(function () {
-    timer.innerHTML = minute + "mins " + second + "secs";
-    second++;
-    if (second == 60) {
-      minute++;
-      second = 0;
-    }
-    if (minute == 60) {
-      hour++;
-      minute = 0;
-    }
-  }, 1000);
+// @description count player's moves
+function showLives() {
+  lives++;
+  lives.innerHTML = lives;
+  //start timer on first click
+  // if (moves == 1) {
+  //   second = 0;
+  //   minute = 0;
+  //   hour = 0;
+  //   startTimer();
+  // }
+  // // setting rates based on moves
+  // if (lives > 8 && lives < 12) {
+  //   for (i = 0; i < 3; i++) {
+  //     if (i > 1) {
+  //       stars[i].style.visibility = "collapse";
+  //     }
+  //   }
+  // } else if (lives > 13) {
+  //   for (i = 0; i < 3; i++) {
+  //     if (i > 0) {
+  //       stars[i].style.visibility = "collapse";
+  //     }
+  //   }
+  // }
 }
 
 // @description congratulations when all cards match, show modal and moves, time and rating
 function congratulations() {
-  if (matchedCard.length == 16) {
-    clearInterval(interval);
-    finalTime = timer.innerHTML;
-
+  if (matchedCard.length == 8) {
     // show congratulations modal
     modal.classList.add("show");
 
@@ -203,31 +210,32 @@ function congratulations() {
 
     //showing move, rating, time on modal
     document.getElementById("finalMove").innerHTML = moves;
-    document.getElementById("starRating").innerHTML = starRating;
-    document.getElementById("totalTime").innerHTML = finalTime;
-
-    //closeicon on modal
-    closeModal();
   }
-}
+  if (lost == true) {
+    // show congratulations modal
+    lostModal.classList.add("show");
 
-// @description close icon on modal
-function closeModal() {
-  closeicon.addEventListener("click", function (e) {
-    modal.classList.remove("show");
-    startGame();
-  });
+    //showing move, rating, time on modal
+    document.getElementById("finalMove").innerHTML = moves;
+  }
 }
 
 // @desciption for user to play Again
 function playAgain() {
-  modal.classList.remove("show");
+  if (lost == true) {
+    lostModal.classList.remove("show");
+  } else {
+    modal.classList.remove("show");
+  }
   startGame();
 }
 
 // loop to add event listeners to each card
 for (var i = 0; i < cards.length; i++) {
   card = cards[i];
+  image = images[i];
+
+  image.classList.add("hidde");
   card.addEventListener("click", displayCard);
   card.addEventListener("click", cardOpen);
   card.addEventListener("click", congratulations);
